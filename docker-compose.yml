@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+
+  nginx-notification-api:
+    container_name: nginx-notification-api
+    image: nginx:latest
+    ports:
+      - "8181:80"
+    volumes:
+      - ./projects/nginx/nginx-notification-api.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - notification-service-1
+      - notification-service-2
+    networks:
+      - notification_network
+
+  notification-service-1:
+    container_name: notification-service-1
+    build:
+      context: ./projects/notification-api
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka
+      - mongo
+    networks:
+      - notification_network
+    environment:
+        MONGO_URI: mongodb://mongo:27017
+        KAFKA_BROKERS: kafka:9092
+        KAFKA_TOPIC: notifications
+        SERVER_PORT: 8080
+
+  notification-service-2:
+    container_name: notification-service-2
+    build:
+      context: ./projects/notification-api
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka
+      - mongo
+    networks:
+      - notification_network
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_TOPIC: notifications
+      SERVER_PORT: 8080
+
+  kafka:
+    container_name: kafka
+    image: confluentinc/cp-kafka:latest
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+    depends_on:
+      - zookeeper
+    networks:
+      - notification_network
+
+  zookeeper:
+    container_name: zookeeper
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - notification_network
+
+  mongo:
+    container_name: mongo
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    networks:
+      - notification_network
+
+networks:
+  notification_network:
+    driver: bridge

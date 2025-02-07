@@ -1,0 +1,7 @@
+kafka-topics --create --bootstrap-server kafka:9092 --topic __consumer_offsets --partitions 50 --replication-factor 1
+
+kafka-topics --create --bootstrap-server kafka:9092 --topic promocoes --partitions 3 --replication-factor 1
+
+npx wscat -c ws://localhost:8181/ws
+
+curl -X POST "http://localhost:8181/notify" -H "Content-Type: application/json" -d '{"message": "Desconto de 50% em eletrônicos!"}'
